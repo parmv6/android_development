@@ -33,6 +33,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 import com.stericsson.hardware.fm.FmBand;
 import com.stericsson.hardware.fm.FmReceiver;
+import android.media.AudioManager;
+import android.media.AudioSystem;
 
 import java.io.IOException;
 
@@ -94,6 +96,8 @@ public class FmRadioReceiver extends Activity {
     // Array of the available stations in MHz
     private ArrayAdapter<CharSequence> mMenuAdapter;
 
+    private AudioManager audioman;
+
     // The name of the storage string
     public static final String PREFS_NAME = "FMRadioPrefsFile";
 
@@ -128,6 +132,8 @@ public class FmRadioReceiver extends Activity {
         SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
         mSelectedBand = settings.getInt("selectedBand", 1);
         mFmBand = new FmBand(mSelectedBand);
+        audioman = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+        setVolumeControlStream(AudioManager.STREAM_MUSIC);
         setupButtons();
     }
 
@@ -258,6 +264,8 @@ public class FmRadioReceiver extends Activity {
             mMediaPlayer.release();
             mMediaPlayer = null;
         }
+        AudioSystem.setDeviceConnectionState(AudioSystem.DEVICE_OUT_FM, AudioSystem.DEVICE_STATE_UNAVAILABLE, "");
+        audioman.setParameters("fm_off=1");
     }
 
     /**
@@ -319,7 +327,11 @@ public class FmRadioReceiver extends Activity {
             mMediaPlayer.prepare();
             mMediaPlayer.start();
         } catch (IOException e) {
-            showToast("Unable to start the media player", Toast.LENGTH_LONG);
+            //showToast("Unable to start the media player", Toast.LENGTH_LONG);
+            // fall back to legacy audio routing
+            AudioSystem.setDeviceConnectionState(AudioSystem.DEVICE_OUT_FM, AudioSystem.DEVICE_STATE_UNAVAILABLE, "");
+            AudioSystem.setDeviceConnectionState(AudioSystem.DEVICE_OUT_FM, AudioSystem.DEVICE_STATE_AVAILABLE, "");
+            audioman.setParameters("fm_on=1");
         }
     }
 
